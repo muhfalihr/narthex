@@ -1,6 +1,7 @@
 use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
+use super::models::Target;
 
 #[derive(Clone)]
 pub struct TargetService {
@@ -24,13 +25,12 @@ impl TargetService {
         Ok(row.get("id"))
     }
 
-    pub async fn list_targets(&self, group_id: Uuid) -> Result<Vec<String>> {
-        let rows = sqlx::query("SELECT address FROM targets WHERE group_id = $1")
+    pub async fn list_targets(&self, group_id: Uuid) -> Result<Vec<Target>> {
+        let targets = sqlx::query_as::<_, Target>("SELECT id, group_id, address, created_at FROM targets WHERE group_id = $1")
             .bind(group_id)
             .fetch_all(&self.pool)
             .await?;
 
-        let targets = rows.into_iter().map(|r| r.get("address")).collect();
         Ok(targets)
     }
 

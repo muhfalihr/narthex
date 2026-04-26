@@ -64,7 +64,7 @@ async fn main() {
     };
 
     // Run migrations (optional but good practice if using sqlx migrations)
-    sqlx::migrate!("./migrations").run(&pool).await.expect("Failed to run migrations");
+    // sqlx::migrate!("./migrations").run(&pool).await.expect("Failed to run migrations");
 
     // Initialize AppState
     let state = AppState {

@@ -14,21 +14,43 @@ impl DiscoveryService {
         Self { pool }
     }
 
-    pub async fn get_sd_configs(&self) -> Result<Vec<NarthexSDResp>> {
-        let records = sqlx::query(
-            r#"
-            SELECT 
-                g.id as group_id,
-                COALESCE(json_agg(DISTINCT t.address) FILTER (WHERE t.address IS NOT NULL), '[]') as targets,
-                COALESCE(json_object_agg(l.label_key, l.label_value) FILTER (WHERE l.label_key IS NOT NULL), '{}') as labels
-            FROM target_groups g
-            LEFT JOIN targets t ON t.group_id = g.id
-            LEFT JOIN labels l ON l.group_id = g.id
-            GROUP BY g.id
-            "#
-        )
-        .fetch_all(&self.pool)
-        .await?;
+    pub async fn get_sd_configs(&self, group_id: Option<uuid::Uuid>) -> Result<Vec<NarthexSDResp>> {
+        let records = match group_id {
+            Some(id) => {
+                sqlx::query(
+                    r#"
+                    SELECT 
+                        g.id as group_id,
+                        COALESCE(json_agg(DISTINCT t.address) FILTER (WHERE t.address IS NOT NULL), '[]') as targets,
+                        COALESCE(json_object_agg(l.label_key, l.label_value) FILTER (WHERE l.label_key IS NOT NULL), '{}') as labels
+                    FROM target_groups g
+                    LEFT JOIN targets t ON t.group_id = g.id
+                    LEFT JOIN labels l ON l.group_id = g.id
+                    WHERE g.id = $1
+                    GROUP BY g.id
+                    "#
+                )
+                .bind(id)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            None => {
+                sqlx::query(
+                    r#"
+                    SELECT 
+                        g.id as group_id,
+                        COALESCE(json_agg(DISTINCT t.address) FILTER (WHERE t.address IS NOT NULL), '[]') as targets,
+                        COALESCE(json_object_agg(l.label_key, l.label_value) FILTER (WHERE l.label_key IS NOT NULL), '{}') as labels
+                    FROM target_groups g
+                    LEFT JOIN targets t ON t.group_id = g.id
+                    LEFT JOIN labels l ON l.group_id = g.id
+                    GROUP BY g.id
+                    "#
+                )
+                .fetch_all(&self.pool)
+                .await?
+            }
+        };
 
         let mut results = Vec::new();
 

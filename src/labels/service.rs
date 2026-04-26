@@ -1,7 +1,7 @@
 use anyhow::Result;
-use sqlx::{PgPool, Row};
-use std::collections::HashMap;
+use sqlx::PgPool;
 use uuid::Uuid;
+use super::models::Label;
 
 #[derive(Clone)]
 pub struct LabelService {
@@ -31,16 +31,12 @@ impl LabelService {
         Ok(())
     }
 
-    pub async fn list_labels(&self, group_id: Uuid) -> Result<HashMap<String, String>> {
-        let rows = sqlx::query("SELECT label_key, label_value FROM labels WHERE group_id = $1")
+    pub async fn list_labels(&self, group_id: Uuid) -> Result<Vec<Label>> {
+        let labels = sqlx::query_as::<_, Label>("SELECT id, group_id, label_key as key, label_value as value, created_at FROM labels WHERE group_id = $1")
             .bind(group_id)
             .fetch_all(&self.pool)
             .await?;
 
-        let mut labels = HashMap::new();
-        for row in rows {
-            labels.insert(row.get("label_key"), row.get("label_value"));
-        }
         Ok(labels)
     }
 

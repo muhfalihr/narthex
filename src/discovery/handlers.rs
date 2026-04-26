@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{State, Query},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -9,6 +9,11 @@ use serde_json::json;
 use crate::app_state::AppState;
 use super::models::NarthexSDResp;
 
+#[derive(serde::Deserialize)]
+pub struct SDQuery {
+    pub group_id: Option<uuid::Uuid>,
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/targets",
@@ -17,12 +22,12 @@ use super::models::NarthexSDResp;
         (status = 500, description = "Internal Server Error")
     )
 )]
-pub async fn get_sd_configs(State(state): State<AppState>) -> impl IntoResponse {
-    match state.discovery_service.get_sd_configs().await {
+pub async fn get_sd_configs(
+    State(state): State<AppState>,
+    Query(query): Query<SDQuery>,
+) -> impl IntoResponse {
+    match state.discovery_service.get_sd_configs(query.group_id).await {
         Ok(configs) => {
-            if configs.is_empty() {
-                return (StatusCode::NOT_FOUND, Json(json!({"error": "No SD configs found"}))).into_response();
-            }
             (StatusCode::OK, Json(configs)).into_response()
         }
         Err(e) => {
