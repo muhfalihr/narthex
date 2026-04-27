@@ -1,6 +1,7 @@
 import { fetchGroup, fetchTargets, fetchLabels, updateGroup, deleteGroup, addTarget, removeTarget, upsertLabel, removeLabel } from '$lib/api';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
+import { logger } from '$lib/logger';
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
     const { id } = params;
@@ -18,7 +19,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
             labels
         };
     } catch (e) {
-        console.error('Error in group load:', e);
+        logger.error({ err: e, groupId: id }, 'Error in group load');
         return {
             group: null,
             targets: [],

@@ -1,6 +1,7 @@
 import { fetchGroups, createGroup } from '$lib/api';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { logger } from '$lib/logger';
 
 export const load: PageServerLoad = async ({ fetch }) => {
     try {
@@ -9,7 +10,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
             groups
         };
     } catch (e) {
-        console.error('Error in load:', e);
+        logger.error({ err: e }, 'Error in load');
         return {
             groups: [],
             error: 'Failed to load target groups'
@@ -31,7 +32,7 @@ export const actions: Actions = {
             await createGroup(name, description, fetch);
             return { success: true };
         } catch (e) {
-            console.error('Failed to create group:', e);
+            logger.error({ err: e }, 'Failed to create group');
             return fail(500, { error: 'Failed to create group' });
         }
     }
