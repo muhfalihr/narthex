@@ -1,0 +1,35 @@
+# Rust
+target/
+**/*.rs.bk
+
+# Node.js
+**/node_modules/
+**/build/
+**/.svelte-kit/
+ui/.env
+
+# Git
+.git/
+.gitignore
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Kubernetes/Helm
+charts/
+
+# Documentation
+docs/
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+README.md
+
+# Misc
+.vscode/
+.idea/
+.DS_Store
+*.log
+tmp/
