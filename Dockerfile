@@ -1,5 +1,5 @@
 # Stage 1: Build Rust Backend
-FROM rust:1.85-slim AS backend-builder
+FROM rust:1.88-slim AS backend-builder
 WORKDIR /app
 
 # Install build dependencies
