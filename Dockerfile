@@ -55,6 +55,8 @@ ENV APP_PORT=3000
 ENV APP_HOST=0.0.0.0
 # Frontend expected on 8080
 ENV PORT=8080
+ENV HOST_HEADER=x-forwarded-host
+ENV PROTOCOL_HEADER=x-forwarded-proto
 
 EXPOSE 3000 8080
 ENTRYPOINT ["./entrypoint.sh"]

@@ -1,10 +1,8 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
-	import { API_BASE } from '$lib/api';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-
 	let group = $derived(data.group);
 	let targets = $derived(data.targets);
 	let labels = $derived(data.labels);
@@ -12,7 +10,7 @@
 	let showEditGroup = $state(false);
 	let showAddTarget = $state(false);
 	let showManageLabels = $state(false);
-	let copiedUrl = $state(false);
+	let showDeleteConfirm = $state(false);
 
 	$effect(() => {
 		if (form?.updateGroup && 'success' in form.updateGroup) showEditGroup = false;
@@ -20,59 +18,108 @@
 		if (form?.upsertLabel && 'success' in form.upsertLabel) showManageLabels = false;
 	});
 
-	function copyToClipboard() {
-		navigator.clipboard.writeText(`${API_BASE}/targets?group_id=${group?.id}`);
-		copiedUrl = true;
-		setTimeout(() => copiedUrl = false, 2000);
-	}
+	let deleteForm = $state<HTMLFormElement>();
 </script>
 
 {#if data.error || !group}
 	<div class="space-y-4">
-		<a href="/" class="text-sm text-zinc-500 hover:text-white flex items-center gap-2">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+		<a href="/" class="flex items-center gap-2 text-sm text-zinc-500 hover:text-white">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg
+			>
 			Back to Dashboard
 		</a>
-		<div class="p-4 bg-red-900/20 border border-red-900/50 rounded-lg text-red-400 text-sm">
+		<div class="rounded-lg border border-red-900/50 bg-red-900/20 p-4 text-sm text-red-400">
 			{data.error || 'Group not found'}
 		</div>
 	</div>
 {:else}
 	<div class="space-y-8">
 		<header class="space-y-4">
-			<a href="/" class="text-sm text-zinc-500 hover:text-white flex items-center gap-2 w-fit transition-colors">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+			<a
+				href="/"
+				class="flex w-fit items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg
+				>
 				Back to Dashboard
 			</a>
 			<div class="flex items-end justify-between">
 				<div>
-					<h1 class="text-3xl font-bold text-white tracking-tight">{group.name}</h1>
-					<p class="text-zinc-500 mt-1">{group.description || 'No description provided.'}</p>
+					<h1 class="text-3xl font-bold tracking-tight text-white">{group.name}</h1>
+					<p class="mt-1 text-zinc-500">{group.description || 'No description provided.'}</p>
 				</div>
 				<div class="flex items-center gap-3">
-					<button onclick={() => showEditGroup = !showEditGroup} class="px-4 py-2 rounded-md text-sm font-medium border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all">
+					<button
+						onclick={() => (showEditGroup = !showEditGroup)}
+						class="rounded-md border border-zinc-800 px-4 py-2 text-sm font-medium text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
+					>
 						{showEditGroup ? 'Cancel Edit' : 'Edit Group'}
 					</button>
-					<form method="POST" action="?/deleteGroup" use:enhance onsubmit={(e) => { if(!confirm('Are you sure?')) e.preventDefault(); }}>
-						<button type="submit" class="px-4 py-2 rounded-md text-sm font-medium bg-red-950/30 text-red-400 border border-red-900/30 hover:bg-red-900/40 transition-all">
+					<form bind:this={deleteForm} method="POST" action="?/deleteGroup" use:enhance>
+						<button
+							type="button"
+							onclick={() => (showDeleteConfirm = true)}
+							class="rounded-md border border-red-900/30 bg-red-950/30 px-4 py-2 text-sm font-medium text-red-400 transition-all hover:bg-red-900/40"
+						>
 							Delete
 						</button>
 					</form>
 				</div>
 			</div>
-			
+
 			{#if showEditGroup}
-				<form method="POST" action="?/updateGroup" use:enhance class="bg-zinc-900 border border-zinc-800 p-6 rounded-xl space-y-4">
+				<form
+					method="POST"
+					action="?/updateGroup"
+					use:enhance
+					class="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6"
+				>
 					<div>
-						<label for="name" class="block text-sm font-medium text-zinc-300 mb-1">Name</label>
-						<input type="text" id="name" name="name" value={group.name} required class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" />
+						<label for="name" class="mb-1 block text-sm font-medium text-zinc-300">Name</label>
+						<input
+							type="text"
+							id="name"
+							name="name"
+							value={group.name}
+							required
+							class="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+						/>
 					</div>
 					<div>
-						<label for="description" class="block text-sm font-medium text-zinc-300 mb-1">Description</label>
-						<input type="text" id="description" name="description" value={group.description || ''} class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" />
+						<label for="description" class="mb-1 block text-sm font-medium text-zinc-300"
+							>Description</label
+						>
+						<input
+							type="text"
+							id="description"
+							name="description"
+							value={group.description || ''}
+							class="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+						/>
 					</div>
 					<div class="flex justify-end">
-						<button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-orange-400 transition-colors">
+						<button
+							type="submit"
+							class="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-400"
+						>
 							Save Changes
 						</button>
 					</div>
@@ -80,31 +127,35 @@
 			{/if}
 		</header>
 
-		<div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between">
-			<div>
-				<h2 class="text-sm font-semibold text-white">Group SD URL</h2>
-				<p class="text-zinc-400 text-sm mt-1">Use this URL to discover targets specifically for this group.</p>
-			</div>
-			<div class="flex items-center gap-2">
-				<code class="px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-md text-orange-400 text-sm font-mono select-all">{API_BASE}/targets?group_id={group.id}</code>
-			</div>
-		</div>
-
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+		<div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
 			<!-- Targets Section -->
-			<section class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-				<div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-					<h2 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Targets</h2>
-					<button onclick={() => showAddTarget = !showAddTarget} class="text-xs font-bold text-orange-400 hover:text-orange-300">
+			<section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+				<div
+					class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-6 py-4"
+				>
+					<h2 class="text-xs font-bold tracking-widest text-zinc-400 uppercase">Targets</h2>
+					<button
+						onclick={() => (showAddTarget = !showAddTarget)}
+						class="text-xs font-bold text-orange-400 hover:text-orange-300"
+					>
 						{showAddTarget ? 'Cancel' : 'Add Target'}
 					</button>
 				</div>
-				
+
 				{#if showAddTarget}
-					<div class="p-6 border-b border-zinc-800 bg-zinc-900/80">
+					<div class="border-b border-zinc-800 bg-zinc-900/80 p-6">
 						<form method="POST" action="?/addTarget" use:enhance class="flex gap-3">
-							<input type="text" name="address" required placeholder="192.168.1.100:8080" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" />
-							<button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-orange-400 transition-colors">
+							<input
+								type="text"
+								name="address"
+								required
+								placeholder="192.168.1.100:8080"
+								class="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+							/>
+							<button
+								type="submit"
+								class="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-400"
+							>
 								Add
 							</button>
 						</form>
@@ -113,12 +164,28 @@
 
 				<div class="divide-y divide-zinc-800">
 					{#each targets as target}
-						<div class="px-6 py-4 flex items-center justify-between group/item">
-							<code class="text-sm text-zinc-300 font-mono">{target.address}</code>
+						<div class="group/item flex items-center justify-between px-6 py-4">
+							<code class="font-mono text-sm text-zinc-300">{target.address}</code>
 							<form method="POST" action="?/removeTarget" use:enhance>
 								<input type="hidden" name="address" value={target.address} />
-								<button type="submit" aria-label="Delete target" class="opacity-0 group-hover/item:opacity-100 p-1.5 text-zinc-500 hover:text-red-400 transition-all">
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+								<button
+									type="submit"
+									aria-label="Delete target"
+									class="p-1.5 text-zinc-500 opacity-0 transition-all group-hover/item:opacity-100 hover:text-red-400"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"
+										></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg
+									>
 								</button>
 							</form>
 						</div>
@@ -131,20 +198,40 @@
 			</section>
 
 			<!-- Labels Section -->
-			<section class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-				<div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-					<h2 class="text-sm font-semibold text-white uppercase tracking-wider">Labels</h2>
-					<button onclick={() => showManageLabels = !showManageLabels} class="text-xs font-bold text-orange-400 hover:text-orange-300">
+			<section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+				<div
+					class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-6 py-4"
+				>
+					<h2 class="text-sm font-semibold tracking-wider text-white uppercase">Labels</h2>
+					<button
+						onclick={() => (showManageLabels = !showManageLabels)}
+						class="text-xs font-bold text-orange-400 hover:text-orange-300"
+					>
 						{showManageLabels ? 'Cancel' : 'Add Label'}
 					</button>
 				</div>
-				
+
 				{#if showManageLabels}
-					<div class="p-6 border-b border-zinc-800 bg-zinc-900/80">
+					<div class="border-b border-zinc-800 bg-zinc-900/80 p-6">
 						<form method="POST" action="?/upsertLabel" use:enhance class="flex gap-3">
-							<input type="text" name="key" required placeholder="env" class="w-1/3 bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" />
-							<input type="text" name="value" required placeholder="production" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" />
-							<button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-orange-400 transition-colors">
+							<input
+								type="text"
+								name="key"
+								required
+								placeholder="env"
+								class="w-1/3 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+							/>
+							<input
+								type="text"
+								name="value"
+								required
+								placeholder="production"
+								class="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+							/>
+							<button
+								type="submit"
+								class="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-400"
+							>
 								Add
 							</button>
 						</form>
@@ -154,12 +241,24 @@
 				<div class="p-6">
 					<div class="flex flex-wrap gap-2">
 						{#each labels as label}
-							<div class="flex items-center rounded-md overflow-hidden border border-zinc-700 text-xs group/label">
-								<span class="bg-zinc-800 px-2 py-1.5 text-zinc-400 border-r border-zinc-700">{label.key}</span>
+							<div
+								class="group/label flex items-center overflow-hidden rounded-md border border-zinc-700 text-xs"
+							>
+								<span class="border-r border-zinc-700 bg-zinc-800 px-2 py-1.5 text-zinc-400"
+									>{label.key}</span
+								>
 								<span class="bg-zinc-900 px-2 py-1.5 text-zinc-200">{label.value}</span>
-								<form method="POST" action="?/removeLabel" use:enhance class="bg-zinc-900 border-l border-zinc-700 h-full flex">
+								<form
+									method="POST"
+									action="?/removeLabel"
+									use:enhance
+									class="flex h-full border-l border-zinc-700 bg-zinc-900"
+								>
 									<input type="hidden" name="key" value={label.key} />
-									<button type="submit" class="px-2 text-zinc-500 hover:text-red-400 transition-colors bg-zinc-800 hover:bg-zinc-700 h-full">
+									<button
+										type="submit"
+										class="h-full bg-zinc-800 px-2 text-zinc-500 transition-colors hover:bg-zinc-700 hover:text-red-400"
+									>
 										&times;
 									</button>
 								</form>
@@ -175,22 +274,73 @@
 		</div>
 
 		<!-- Advanced Info -->
-		<section class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-			<h2 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Discovery Metadata</h2>
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+		<section class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+			<h2 class="mb-4 text-sm font-semibold tracking-wider text-white uppercase">
+				Discovery Metadata
+			</h2>
+			<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div>
-					<span class="text-xs text-zinc-500 block mb-1">Group ID</span>
-					<code class="text-xs text-zinc-300 font-mono break-all">{group.id}</code>
+					<span class="mb-1 block text-xs text-zinc-500">Group ID</span>
+					<code class="font-mono text-xs break-all text-zinc-300">{group.id}</code>
 				</div>
 				<div>
-					<span class="text-xs text-zinc-500 block mb-1">Created At</span>
+					<span class="mb-1 block text-xs text-zinc-500">Created At</span>
 					<span class="text-xs text-zinc-300">{new Date(group.created_at).toLocaleString()}</span>
 				</div>
 				<div>
-					<span class="text-xs text-zinc-500 block mb-1">Last Modified</span>
+					<span class="mb-1 block text-xs text-zinc-500">Last Modified</span>
 					<span class="text-xs text-zinc-300">{new Date(group.updated_at).toLocaleString()}</span>
 				</div>
 			</div>
 		</section>
+	</div>
+{/if}
+
+{#if showDeleteConfirm}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-sm"
+	>
+		<div
+			class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl shadow-orange-500/10"
+		>
+			<div
+				class="mb-6 flex h-12 w-12 items-center justify-center rounded-full border border-red-900/50 bg-red-900/20"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="text-red-400"
+					><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path
+						d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+					/></svg
+				>
+			</div>
+			<h3 class="mb-2 text-xl font-bold text-white">Delete Target Group</h3>
+			<p class="mb-8 text-zinc-400">
+				Are you sure you want to delete <span class="font-semibold text-white">"{group?.name}"</span
+				>? This action cannot be undone and all associated targets and labels will be removed.
+			</p>
+			<div class="flex gap-3">
+				<button
+					onclick={() => (showDeleteConfirm = false)}
+					class="flex-1 rounded-lg border border-zinc-800 px-4 py-2.5 text-sm font-semibold text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={() => deleteForm?.requestSubmit()}
+					class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-500"
+				>
+					Confirm Delete
+				</button>
+			</div>
+		</div>
 	</div>
 {/if}
