@@ -13,6 +13,7 @@ RUN rm -rf src
 
 # Copy source and build binary
 COPY src ./src
+COPY migrations ./migrations
 RUN touch src/main.rs
 RUN cargo build --release
 
