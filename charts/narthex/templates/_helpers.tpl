@@ -22,6 +22,13 @@ Create a default fully qualified app name.
 {{- end }}
 
 {{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "narthex.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "narthex.labels" -}}
@@ -42,8 +49,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
+Create the name of the service account to use
 */}}
-{{- define "narthex.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- define "narthex.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "narthex.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
 {{- end }}

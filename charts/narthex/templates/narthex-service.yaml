@@ -5,13 +5,13 @@ metadata:
   labels:
     {{- include "narthex.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.narthex.service.type }}
+  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.narthex.service.frontendPort }}
+    - port: {{ .Values.service.frontendPort }}
       targetPort: frontend
       protocol: TCP
       name: frontend
-    - port: {{ .Values.narthex.service.backendPort }}
+    - port: {{ .Values.service.backendPort }}
       targetPort: backend
       protocol: TCP
       name: backend
