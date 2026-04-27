@@ -9,7 +9,7 @@ dotenvy = "0.15.7"
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid", "json"] }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 utoipa = "5.4.0"
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "reqwest"] }
 uuid = { version = "1.23.1", features = ["serde", "v4"] }
 serde_json = "1.0.149"
 envy = "0.4.2"
