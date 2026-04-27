@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "narthex.fullname" . }}
+  labels:
+    {{- include "narthex.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.narthex.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "narthex.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "narthex.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.narthex.image.repository }}:{{ .Values.narthex.image.tag }}"
+          imagePullPolicy: {{ .Values.narthex.image.pullPolicy }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key | replace "." "_" | upper }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "narthex.fullname" $ }}-config
+                  key: {{ $key }}
+            {{- end }}
+            {{- range $key, $value := .Values.secrets }}
+            - name: {{ $key | replace "." "_" | upper }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "narthex.fullname" $ }}-secrets
+                  key: {{ $key }}
+            {{- end }}
+          ports:
+            - name: frontend
+              containerPort: 8080
+              protocol: TCP
+            - name: backend
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: backend
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: backend
+            initialDelaySeconds: 5
+            periodSeconds: 10

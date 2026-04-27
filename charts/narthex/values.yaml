@@ -1,0 +1,66 @@
+# Default values for narthex.
+
+# Dynamic Environment Variables (ConfigMap)
+env:
+  db.host: '{{ include "narthex.fullname" . }}-postgres'
+  db.port: "5432"
+  app.host: "0.0.0.0"
+  app.port: "3000"
+
+# Sensitive Environment Variables (Secret)
+secrets:
+  db.user: "narthex_user"
+  db.password: "narthex_password"
+  db.name: "narthex_db"
+
+narthex:
+  replicaCount: 1
+  image:
+    repository: docker.io/muhfalihr/narthex
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    frontendPort: 80
+    backendPort: 3000
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: narthex.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+
+postgres:
+  enabled: true
+  image:
+    repository: postgis/postgis
+    tag: 15-3.4-alpine
+  persistence:
+    enabled: false
+    # storageClass: "standard"
+    size: 10Gi
+  pgData: /var/lib/postgresql/data/pgdata
+  command: 
+    - /bin/sh
+    - -c
+    - |
+      docker-entrypoint.sh -c shared_buffers=4GB \
+      -c max_connections=200 \
+      -c shared_buffers=2GB \
+      -c effective_cache_size=6GB \
+      -c maintenance_work_mem=1GB \
+      -c checkpoint_completion_target=0.9 \
+      -c wal_buffers=16MB \
+      -c default_statistics_target=500 \
+      -c random_page_cost=1.1 \
+      -c effective_io_concurrency=200 \
+      -c work_mem=4621kB \
+      -c huge_pages=off \
+      -c min_wal_size=4GB \
+      -c max_wal_size=16GB \
+      -c log_timezone='Asia/Jakarta' \
+      -c timezone='Asia/Jakarta' \
+      -c ssl=off

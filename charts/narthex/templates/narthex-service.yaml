@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "narthex.fullname" . }}
+  labels:
+    {{- include "narthex.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.narthex.service.type }}
+  ports:
+    - port: {{ .Values.narthex.service.frontendPort }}
+      targetPort: frontend
+      protocol: TCP
+      name: frontend
+    - port: {{ .Values.narthex.service.backendPort }}
+      targetPort: backend
+      protocol: TCP
+      name: backend
+  selector:
+    {{- include "narthex.selectorLabels" . | nindent 4 }}
