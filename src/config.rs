@@ -9,6 +9,8 @@ pub struct Config {
     pub db_user: String,
     pub db_password: String,
     pub db_name: String,
+    pub app_username: Option<String>,
+    pub app_password: Option<String>,
 }
 
 impl Config {

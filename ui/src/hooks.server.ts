@@ -1,8 +1,46 @@
 import { logger } from '$lib/logger';
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { redirect } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
+	const username = env.APP_USERNAME;
+	const password = env.APP_PASSWORD;
+	const authEnabled = !!(username && password);
+
+	if (event.url.pathname === '/login') {
+		return resolve(event);
+	}
+
+	const sessionId = event.cookies.get('session_id');
+	const authHeader = event.request.headers.get('Authorization');
+	const expectedToken = authEnabled ? btoa(`${username}:${password}`) : null;
+
+	let isAuthorized = !authEnabled;
+
+	if (authEnabled) {
+		if (sessionId === expectedToken) {
+			isAuthorized = true;
+		} else if (authHeader === `Basic ${expectedToken}`) {
+			isAuthorized = true;
+		}
+	}
+
+	// Protect routes
+	if (authEnabled && !isAuthorized) {
+		logger.warn({ url: event.url.pathname, authEnabled, isAuthorized }, 'Unauthorized access attempt');
+		
+		// If it's an API request from the browser, return 401
+		if (event.url.pathname.startsWith('/api/v1') && event.request.headers.get('accept')?.includes('application/json')) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		// For all other requests, redirect to login
+		throw redirect(303, '/login');
+	}
+
 	// Proxy API requests to the backend
 	if (event.url.pathname.startsWith('/api/v1')) {
 		const host = env.APP_HOST || '127.0.0.1';
@@ -17,6 +55,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 				if (!forbiddenHeaders.includes(key.toLowerCase())) {
 					requestHeaders.set(key, value);
 				}
+			}
+
+			// Inject Authorization header if auth is enabled
+			if (authEnabled) {
+				requestHeaders.set('Authorization', `Basic ${expectedToken}`);
 			}
 
 			const response = await fetch(backendUrl, {
