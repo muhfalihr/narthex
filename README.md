@@ -15,6 +15,7 @@
   - [Local Development](#local-development)
   - [Docker Deployment](#docker-deployment)
   - [Kubernetes / Helm](#kubernetes--helm)
+- [Security & Authentication](#-security--authentication)
 - [Configuration](#⚙️-configuration)
 - [Usage with Prometheus](#📡-usage-with-prometheus)
 - [API Documentation](#-api-documentation)
@@ -27,7 +28,8 @@
 - **Dual-Process Container**: Backend (Rust/Axum) and Frontend (SvelteKit) are efficiently bundled in a single Docker image.
 - **RESTful API**: A full-featured API for programmatically managing Prometheus target groups.
 - **Modern Web UI**: Built with SvelteKit 5 and TailwindCSS for a fast, responsive, and intuitive management experience.
-- **Dynamic Kubernetes Deployment**: Flexible Helm chart supporting dynamic environment variables and an optimized PostgreSQL/PostGIS setup.
+- **Optional Authentication**: Protect your dashboard and API with environment-based credentials.
+- **Dynamic Kubernetes Deployment**: Flexible Helm chart supporting dynamic environment variables and an optimized PostgreSQL setup.
 - **Reliable Storage**: Persistent and scalable data storage using PostgreSQL and `sqlx`.
 
 ## 🏗️ Architecture
@@ -36,7 +38,7 @@
 | :--- | :--- | :--- |
 | **Backend** | [Rust](https://www.rust-lang.org/) & [Axum](https://github.com/tokio-rs/axum) | High-performance, safe, and highly concurrent REST API. |
 | **Frontend** | [SvelteKit 5](https://svelte.dev/) | SSR-enabled modern UI using the Node.js adapter. |
-| **Database** | PostgreSQL | Relational database (optionally with PostGIS via Helm). |
+| **Database** | PostgreSQL | Relational database. |
 | **Container**| Multi-stage Docker | Minimal image size using `debian:bookworm-slim`. |
 
 ---
@@ -54,7 +56,7 @@ Ensure you have the following installed if developing locally:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/narthex.git
+   git clone https://github.com/muhfalihr/narthex.git
    cd narthex
    ```
 
@@ -82,7 +84,7 @@ Build and run the combined application locally. Both the frontend and backend ar
 
 1. **Build the image**:
    ```bash
-   docker build -t docker.io/muhfalihr/narthex:latest .
+   docker build -t narthex:latest .
    ```
 
 2. **Run the container**:
@@ -94,23 +96,28 @@ Build and run the combined application locally. Both the frontend and backend ar
      -e DB_USER=your_user \
      -e DB_PASSWORD=your_pass \
      -e DB_NAME=your_db \
-     docker.io/muhfalihr/narthex:latest
+     -e APP_USERNAME=admin \
+     -e APP_PASSWORD=securepassword \
+     narthex:latest
    ```
    *Frontend will be available at `http://localhost:8080` and the API at `http://localhost:3000/api/v1`.*
 
-### Kubernetes / Helm
+---
 
-Deploy Narthex and a bundled, optimized PostgreSQL instance using the included Helm chart.
+## 🔒 Security & Authentication
 
-```bash
-helm install my-release ./charts/narthex
-```
+Narthex supports an optional authentication layer. When enabled, both the Web UI and the REST API are protected.
+
+### Enabling Authentication
+To enable authentication, set the `APP_USERNAME` and `APP_PASSWORD` environment variables. If either is missing, the application will run in open access mode.
+
+### How it Works
+- **Web UI**: Users will be redirected to a login page. Upon successful login, a secure session cookie is issued.
+- **API Access**: Direct API requests (e.g., from Prometheus or `curl`) must use **HTTP Basic Authentication**.
 
 ---
 
 ## ⚙️ Configuration
-
-The application requires the following environment variables to connect to the database:
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -121,20 +128,35 @@ The application requires the following environment variables to connect to the d
 | `DB_NAME` | Database name | - |
 | `APP_HOST` | Backend bind address | `0.0.0.0` |
 | `APP_PORT` | Backend port | `3000` |
+| `APP_USERNAME` | Optional: Admin username for authentication | - |
+| `APP_PASSWORD` | Optional: Admin password for authentication | - |
 | `PORT` | Frontend Node.js port | `8080` |
 
 ---
 
 ## 📡 Usage with Prometheus
 
-To instruct Prometheus to discover targets managed by Narthex, add the following to your `prometheus.yml`:
+To instruct Prometheus to discover targets managed by Narthex, add the following to your `prometheus.yml`. 
 
+### Without Authentication
 ```yaml
 scrape_configs:
   - job_name: 'narthex_discovery'
     http_sd_configs:
-      - url: 'http://<narthex-backend-host>:3000/api/v1/discovery'
+      - url: 'http://<narthex-backend-host>:3000/api/v1/targets'
         refresh_interval: 30s
+```
+
+### With Authentication
+```yaml
+scrape_configs:
+  - job_name: 'narthex_discovery'
+    http_sd_configs:
+      - url: 'http://<narthex-backend-host>:3000/api/v1/targets'
+        refresh_interval: 30s
+        basic_auth:
+          username: 'your_username'
+          password: 'your_password'
 ```
 
 ---
