@@ -94,6 +94,8 @@ secrets:
   db.user: "narthex_user"
   db.password: "narthex_password"
   db.name: "narthex_db"
+  app.username: "admin"
+  app.password: "admin_password"
 
 postgres:
   enabled: true
