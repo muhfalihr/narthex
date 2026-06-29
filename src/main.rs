@@ -65,11 +65,10 @@ async fn main() {
         }
     };
 
-    // Run migrations
-    // sqlx::migrate!("./migrations")
-    //     .run(&pool)
-    //     .await
-    //     .expect("Failed to run migrations");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
 
     // Initialize AppState
     let config_arc = Arc::new(config);
