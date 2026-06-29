@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-29
+
+### Changed
+- **Documentation**:
+  - Rewrote `README.md` with logo, improved badges, architecture diagram, full API reference table, and cleaner structure.
+  - Rewrote `CONTRIBUTING.md` with project structure overview, full script reference, and code style guidelines.
+  - Replaced boilerplate `ui/README.md` with Narthex-specific frontend documentation.
+- **Assets**: Added `logo.svg` — project logo derived from the UI favicon for use in documentation and package registries.
+
 ## [0.1.1] - 2026-04-28
 
 ### Added
